@@ -1,0 +1,87 @@
+import csv
+import os
+import locale
+from time import sleep
+
+
+def load_games(filename="db_games.csv"):
+    games = []
+    with open(filename, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            games.append(row)
+    return games
+
+def Save_data(games, filepath):
+    try:  #Sparar data till csv fil
+        with open(filepath, 'w', newline='') as file:
+            fieldnames = ['id', 'name', 'genre', 'rating', 'price', 'short_review', 'long_review']
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(games)
+
+    except Exception as error_code:
+        print("Fel", error_code)
+    return f"OK"
+
+def list_games(games):
+    print("=== Nintendo Games ===")
+    for game in games:
+        print(f"{game['id']}. {game['name']} ({game['genre']}) - Rating: {game['rating']}")
+        print(f"Pris: {game['price']} SEK")
+        print("Kort recension:", game['short_review'])
+    
+def show_detailed_review(game_id, games):
+    for game in games:
+        if game["id"] == str(game_id):
+            print(f"=== {game['name']} ===")
+            print(game['long_review'])
+            return
+    print("Inget spel med det ID:t hittades.")
+    
+def game_details():
+    if __name__ == "__main__":
+        games = load_games()
+        list_games(games)               # visar kort info för alla spel
+        idx = int(input("Ange spel ID för att se lång recension: "))
+        print("\n--- Lång recension för spel ID", {idx}, "---\n")
+        show_detailed_review(idx, games)# visar bara lång recension för specifikt spel
+        wait = input("\nTryck på Enter för att fortsätta...")
+        
+def add_game(games):
+    print(f"""Vilken produkt vill du lägga till?""")
+    name = input("Namn: ")
+    genre = input("Genre: ")   
+    rating = float(input("Rating: "))
+    price = int(input("Pris: "))
+    short_review = input("Kort recension: ")
+    long_review = input("Lång recension: ")
+    games.append({
+        "id": len(games) + 1,
+        "name": name,
+        "genre": genre,
+        "rating": rating,
+        "short_review": short_review,
+        "long_review": long_review,
+        "price": price
+    })
+    Save_data(games, 'db_games.csv')
+    print("Sparar produkt...")
+    os.system('cls')    
+    
+
+
+while True:
+    os.system('cls') 
+    list_games(games=load_games()) 
+    print("1. Visa lång recension för ett spel")
+    print("2. FUNKAR EJ Lägg till ett nytt spel och recension")
+    print("3. FUNKAR EJ Ändra en befintlig recension")
+    
+    choice = int(input("Vad vill du göra?:"))
+    
+    if choice == 1:
+         add_game(games=load_games())
+        
+    
+   
