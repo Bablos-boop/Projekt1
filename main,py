@@ -33,7 +33,7 @@ def truncate_string(word, length=20):
 
 def list_games(games):
     print("=== Nintendo Games ===")
-    header = f"{'#':<6} {'NAMN':<26} {'GENRE':<26} {'RATING':<15} {'PRIS':<15} {'KORT RECENSION':<10}"
+    header = f"{'#':<4} {'NAMN':<30} {'GENRE':<26} {'RATING':<8} {'PRIS':<12} {'KORT RECENSION':<30}"
     # rader för varje produkt:
     separator = "-" * 110           #linje
    
@@ -46,14 +46,18 @@ def list_games(games):
         rating = game['rating']
         price = game['price']
         short_review = truncate_string(game['short_review'])
+        long_review = game['long_review']
         
         price = locale.currency(price, grouping=True)
-        row = f"{index:<5} {name:<25} {genre:<50} {rating:<14} {price:<10} {short_review:<10}"
+        row = f"{index:<4} {name:<30} {genre:<26} {rating:<8} {price:<12} {short_review:<30}"
 
         rows.append(row)
     
     # kombinera sidhuvud och rader:
     inventory_table = "\n".join([header, separator] + rows)
+    
+    print(inventory_table)
+    
     
     return f"{inventory_table}"
 
@@ -64,39 +68,66 @@ def load_data(filename):
             id = int(row['id'])
             name = row['name']
             genre = row['genre']
-            rating = float(row['price'])
             price = float(row['price'])
+            rating = row['rating']
+            short_review = row['short_review']
+            long_review = row['long_review']
+           
             
             games.append(
                 {                   
                     "id": id,       
                     "name": name,
                     "genre": genre,
+                    "price": price,
                     "rating": rating,
-                    "quantity": price
+                    "short_review": short_review,
+                    "long_review": long_review,
+                    
                 }
             )
 
   
 def show_detailed_review(game_id, games):
+    os.system('cls')
     for game in games:
-        if game["id"] == str(game_id):
+        if game["id"] == int(game_id):
             print(f"=== {game['name']} ===")
             print(game['long_review'])
             return
     print("Inget spel med det ID:t hittades.")
     
 def game_details():
+    os.system('cls')    
     if __name__ == "__main__":
-        games = load_games()
         list_games(games)               # visar kort info för alla spel
         idx = int(input("Ange spel ID för att se lång recension: "))
         print("\n--- Lång recension för spel ID", {idx}, "---\n")
         show_detailed_review(idx, games)# visar bara lång recension för specifikt spel
         wait = input("\nTryck på Enter för att fortsätta...")
-        
+
+def edit_game(games):
+    game_id = int(input("Ange spel ID för att redigera: "))
+    for game in games:
+            if game["id"] == game_id:
+                print(f"Redigera {game['name']}:")
+                game['name'] = input(f"Namn ({game['name']}): ") or game['name']
+                game['genre'] = input(f"Genre ({game['genre']}): ") or game['genre']
+                game['rating'] = float(input(f"Rating ({game['rating']}): ") or game['rating'])
+                game['price'] = int(input(f"Pris ({game['price']}): ") or game['price'])
+                game['short_review'] = truncate_string(input(f"Kort recension ({game['short_review']}): ") or game['short_review'])
+                game['long_review'] = input(f"Lång recension ({game['long_review']}): ") or game['long_review']
+                Save_data(games, 'db_games.csv')
+                print("Sparar ändringar...")
+                sleep(1)
+                break
+            else:
+                print("Inget spel med det ID:t hittades.")
+            sleep(1)    
+
 def add_game(games):
-    print(f"""Vilken produkt vill du lägga till?""")
+    os.system('cls')    
+    print(f"""Vilket spel vill du lägga till?""")
     name = input("Namn: ")
     genre = input("Genre: ")   
     rating = float(input("Rating: "))
@@ -117,8 +148,33 @@ def add_game(games):
     os.system('cls')    
     
 load_data('db_games.csv')
+menu_options = [
+    "Show longer review",
+    "Remove game",
+    "Add game",
+    "Edit game",
+    "Finish"
+]
 
 while True:
-    os.system('cls') 
+    os.system('cls')
     list_games(games)
-    
+    print("-" * 110)   
+    for index, choice in enumerate(menu_options, start=1):
+        print(f"{index}. {choice}")
+    input_choice = int(input(" "))
+    os.system('cls')
+    if input_choice == 1:
+        
+       show_detailed_review(int(input("Ange spel ID för att se lång recension: ")), games)
+       wait = input("\nTryck på Enter för att fortsätta...")    
+    elif input_choice == 2:
+        game_id = int(input("Ange spel ID för att ta bort: "))
+        games = [game for game in games if game["id"] != game_id]
+        Save_data(games, 'db_games.csv')
+        print("Tar bort spel...")
+        sleep(1)     
+    elif input_choice == 3:
+        add_game(games)   
+    elif input_choice == 4:
+        edit_game(games)
