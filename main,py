@@ -2,6 +2,39 @@ import csv
 import os
 import locale
 from time import sleep
+from colors import bcolors  
+import curses
+
+def test_input(main_window):
+    
+    curses.curs_set(2)
+    main_window.clear()
+    main_window.addstr(0, 0, "Type something: ")
+    main_window.clrtoeol()  # Clear line for input
+    main_window.refresh()    # Refresh to show the updated window
+
+    # Enable echoing of characters typed by the user
+    curses.echo()
+
+    # Get user input
+    input_text = main_window.getstr(0, 16).decode("utf-8")  
+
+    # Disable echoing again
+    curses.noecho()
+
+    # Display the input
+    main_window.addstr(2, 0, f"You typed: {input_text}")  
+    main_window.refresh()
+    main_window.addstr(4, 0, "Press any key to exit.")
+    main_window.refresh()
+    main_window.getch()  # Wait for user to acknowledge
+
+def main(stdscr):
+    curses.curs_set(1)  # Show the cursor for input
+    test_input(stdscr)
+
+if __name__ == "__main__":
+    curses.wrapper(main)
 
 games = []
 
@@ -32,13 +65,15 @@ def truncate_string(word, length=20):
         return word
 
 def list_games(games):
-    print("=== Nintendo Games ===")
-    header = f"{'#':<4} {'NAMN':<30} {'GENRE':<26} {'RATING':<8} {'PRIS':<12} {'KORT RECENSION':<30}"
+    print(
+        f"{bcolors.CYAN}=== Nintendo Games ==={bcolors.DEFAULT}")
+    header = f"{bcolors.YELLOW}{'#':<4} {'NAMN':<30} {'GENRE':<26} {'RATING':<8} {'PRIS':<12} {'BESKRIVNING':<30}{bcolors.DEFAULT}"
     # rader för varje produkt:
     separator = "-" * 110           #linje
    
     #rader för varje produkt:
     rows = []
+    
 
     for index, game in enumerate(games, 1):
         name = game['name']
@@ -91,11 +126,16 @@ def load_data(filename):
 def show_detailed_review(game_id, games):
     os.system('cls')
     for game in games:
-        if game["id"] == int(game_id):
-            print(f"=== {game['name']} ===")
+        if game["id"] == game_id:
+            print(f"=== {game['name']} ===\n")
+            print(game['genre'])
+            print(game['price'],"kr") 
             print(game['long_review'])
+            input("\nEnter to continue..")
             return
-    print("Inget spel med det ID:t hittades.")
+    print("No such game with that ID found.")
+    input("\nEnter to continue..")
+ 
     
 def game_details():
     os.system('cls')    
@@ -104,36 +144,93 @@ def game_details():
         idx = int(input("Ange spel ID för att se lång recension: "))
         print("\n--- Lång recension för spel ID", {idx}, "---\n")
         show_detailed_review(idx, games)# visar bara lång recension för specifikt spel
-        wait = input("\nTryck på Enter för att fortsätta...")
+        wait = input("\nEnter to continue..")
+
+def remove_game(games):
+    while True:
+        list_games(games)
+        print("-" * 110)   
+        try:
+            game_id = int(input("Ange spel ID för att ta bort: "))
+        except ValueError:
+            os.system('cls')
+            print("Ogiltigt ID. Försök igen.")
+            continue
+            
+        for game in games:
+            if game["id"] == game_id:
+                games.remove(game)
+                print("Tar bort spel...")
+                Save_data(games, 'db_games.csv')
+                sleep(1)     
+                return
+        print("Inget spel med det ID:t hittades.")
+
 
 def edit_game(games):
-    game_id = int(input("Ange spel ID för att redigera: "))
-    for game in games:
-            if game["id"] == game_id:
-                print(f"Redigera {game['name']}:")
-                game['name'] = input(f"Namn ({game['name']}): ") or game['name']
-                game['genre'] = input(f"Genre ({game['genre']}): ") or game['genre']
-                game['rating'] = float(input(f"Rating ({game['rating']}): ") or game['rating'])
-                game['price'] = int(input(f"Pris ({game['price']}): ") or game['price'])
-                game['short_review'] = truncate_string(input(f"Kort recension ({game['short_review']}): ") or game['short_review'])
-                game['long_review'] = input(f"Lång recension ({game['long_review']}): ") or game['long_review']
-                Save_data(games, 'db_games.csv')
-                print("Sparar ändringar...")
-                sleep(1)
-                break
-            else:
-                print("Inget spel med det ID:t hittades.")
-            sleep(1)    
+    list_games(games)
+    print("-" * 110)   
+    while True:
+        try:
+            game_id = int(input("Ange spel ID för att redigera: "))
+        except ValueError:
+            os.system('cls')
+            print("Ogiltigt ID. Försök igen.")
+            continue
+        for game in games:
+                if game["id"] == game_id:
+                    print(f"Redigera {game['name']}:")
+                    game['name'] = input(f"Namn ({game['name']}): ") or game['name']
+                    game['genre'] = input(f"Genre ({game['genre']}): ") or game['genre']
+                    try:
+                        game['rating'] = float(input(f"Rating ({game['rating']}): ") or game['rating'])
+                    except ValueError:
+                        print("Ogiltig rating. Behåller tidigare värde.")
+                    game['price'] = int(input(f"Pris ({game['price']}): ") or game['price'])
+                    game['short_review'] = truncate_string(input(f"Kort recension ({game['short_review']}): ") or game['short_review'])
+                    game['long_review'] = input(f"Lång recension ({game['long_review']}): ") or game['long_review']
+                    Save_data(games, 'db_games.csv')
+                    print("Sparar ändringar...")
+                    sleep(1)
+                    break
+                else:
+                    print("Inget spel med det ID:t hittades.")
+                sleep(1)    
 
 def add_game(games):
     os.system('cls')    
     print(f"""Vilket spel vill du lägga till?""")
     name = input("Namn: ")
-    genre = input("Genre: ")   
-    rating = float(input("Rating: "))
-    price = int(input("Pris: "))
+    genre = input("Genre: ") 
+    while True:      
+        rating = input("Rating: (0.0 - 10.0): (T.ex 7.5) ")
+        try:
+            rating = float(rating)
+        except ValueError:
+            os.system('cls')
+            print("Ogiltig rating. Ange ett nummer mellan 0.0 och 10.0.")
+            
+            continue
+        if 0.0 <= rating <= 10.0:
+            break
+        os.system('cls')
+        print("Rating måste vara mellan 0.0 och 10.0. Försök igen.")
+        
+    while True:      
+        price = input("Pris: (Exempel: 599) ")
+        try:
+            price = int(price)
+        except ValueError:
+            os.system('cls')
+            print("Ogiltig rating. Ange ett pris")
+            
+            continue
+        if 0 <= rating <= 1000:
+            break
+        os.system('cls')
+        print("Du skrev ett negativt pris eller för högt. Försök igen.")
     short_review = truncate_string(input("Kort recension: "))
-    long_review = input("Lång recension: ")
+    long_review = input("Längre recension: ")
     games.append({
         "id": len(games) + 1,
         "name": name,
@@ -149,7 +246,7 @@ def add_game(games):
     
 load_data('db_games.csv')
 menu_options = [
-    "Show longer review",
+    "View detailed review",
     "Remove game",
     "Add game",
     "Edit game",
@@ -161,20 +258,33 @@ while True:
     list_games(games)
     print("-" * 110)   
     for index, choice in enumerate(menu_options, start=1):
-        print(f"{index}. {choice}")
-    input_choice = int(input(" "))
+        print(f"{index}. {choice}") 
+    try:  
+        print("\nChoose an alternative (1-5): ", end="")
+        input_choice = int(input())
+    except ValueError:
+        continue
     os.system('cls')
     if input_choice == 1:
+        try: 
+            idx = int(input("Ange spel ID för att se lång recension: "))
+            show_detailed_review(idx, games)
+        except ValueError:
+            print("Non-numeric value entered.")
+            input("\nPress enter to continue...")
+            
         
-       show_detailed_review(int(input("Ange spel ID för att se lång recension: ")), games)
-       wait = input("\nTryck på Enter för att fortsätta...")    
     elif input_choice == 2:
-        game_id = int(input("Ange spel ID för att ta bort: "))
-        games = [game for game in games if game["id"] != game_id]
-        Save_data(games, 'db_games.csv')
-        print("Tar bort spel...")
-        sleep(1)     
+        remove_game(games)
     elif input_choice == 3:
         add_game(games)   
     elif input_choice == 4:
         edit_game(games)
+    elif input_choice > 5 or input_choice < 1:
+        os.system('cls')
+    else:    
+        print("Avslutar programmet...")
+        sleep(0.5)
+        break
+    
+    
