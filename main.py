@@ -131,7 +131,6 @@ def remove_game(games):
         except ValueError:
             os.system('cls')
             print("Ogiltigt ID. Försök igen.")
-            sleep(1)
             continue
         
         found = False
@@ -276,7 +275,7 @@ while True:
     try:  
         input_choice = int(input(f"\n{bcolors.YELLOW}Välj ett alternativ (1-5): {bcolors.DEFAULT}")) # Inmätning för menyval och felhantering vid ogiltig inmatning
     except ValueError:
-        sleep(1)
+       
         continue
     
     if input_choice == 1:
@@ -287,7 +286,7 @@ while True:
             show_detailed_review(idx, games)
         except ValueError:
             print("Ogiltigt ID.")
-            sleep(1)
+           
     elif input_choice == 2: # Ta bort spel funktion 
         remove_game(games)
     elif input_choice == 3: # Lägg till spel funktion
@@ -302,6 +301,6 @@ while True:
         break
     else:
         print("Ogiltigt alternativ (1-5).")
-        sleep(1)
+     
 
 
